@@ -1,0 +1,20 @@
+{
+    "manifest_version": 3,
+    "name": "Lofi Music Player",
+    "description": "Play lofi music while studying",
+    "version": "1.0",
+  
+    "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "images/icon.png",
+      "32": "images/icon.png",
+      "48": "images/icon.png",
+      "128": "images/icon.png"
+    }
+  },
+  "icons": {
+    "128": "images/icon.png" },
+    "permissions": ["storage","activeTab","background","scripting"]
+  }
+  

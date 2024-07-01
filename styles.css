@@ -1,0 +1,87 @@
+body {
+  background: linear-gradient(270deg, #2c3e50, #9a13ae, #002565, #3b3c54, #422275, #26292c);
+  background-size: 800% 800%;
+  animation: psychedelic-bg 40s ease infinite;
+  color: #ffffff;
+  font-family: 'Pacifico', cursive;
+  font-size: 40px;
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+  width: 300px;  /* Set the desired width */
+  height: 250px; /* Increased height for better layout */
+}
+
+@keyframes psychedelic-bg {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+#player-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+#song-name {
+  font-size: 20px;
+  margin-bottom: 10px;
+  text-align: center;
+  width: 100%;
+}
+
+#controls {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+button {
+  background-color: transparent;
+  border: none;
+  color: #fff;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  flex: 1;
+  margin: 0 5px;
+}
+
+button:hover {
+  background-color: #002565;
+}
+
+input {
+  initial-value: 0;
+}
+
+#seek-slider {
+  width: 100%;
+}
+
+#time-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 5px;
+}
+
+#current-time, #total-duration {
+  font-size: 12px;
+}
+
+#footer {
+  font-family: 'Arial', sans-serif;
+  font-size: 10px;
+  color: #ccc;
+  margin-top: 10px;
+}
