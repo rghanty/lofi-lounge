@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const totalDurationElement = document.getElementById('total-duration');
 
   const songs = [
+    { name: 'Kay Nakayama - Body and Mind', url: 'songs/BodyAndMind.mp3'},
     { name: 'Psalm Trees - fever', url: 'songs/Fever.mp3' },
     { name: 'Mondo Loops - Lunar Drive', url: 'songs/LD.mp3' },
     { name: 'hoogway - Missing Earth', url: 'songs/ME.mp3' },
