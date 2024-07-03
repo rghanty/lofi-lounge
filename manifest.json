@@ -1,20 +1,25 @@
 {
-    "manifest_version": 3,
-    "name": "Lofi Music Player",
-    "description": "Play lofi music while studying",
-    "version": "1.0",
-  
-    "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "images/icon.png",
-      "32": "images/icon.png",
-      "48": "images/icon.png",
-      "128": "images/icon.png"
-    }
+  "manifest_version": 3,
+  "name": "Lofi Lounge",
+  "version": "1.0",
+  "description": "Play lofi music while studying.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs",
+    "background",
+    "windows",
+    "offscreen",
+    "scripting"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
   },
   "icons": {
-    "128": "images/icon.png" },
-    "permissions": ["storage","activeTab","background","scripting"]
+    "48": "images/icon.png",
+    "128": "images/icon.png"
   }
-  
+}

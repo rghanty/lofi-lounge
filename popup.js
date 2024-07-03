@@ -1,95 +1,157 @@
 document.addEventListener('DOMContentLoaded', function() {
-  const playPauseButton = document.getElementById('play-pause');
-  const prevButton = document.getElementById('prev');
-  const nextButton = document.getElementById('next');
-  const seekSlider = document.getElementById('seek-slider');
-  const songName = document.getElementById('song-name');
-  const currentTimeElement = document.getElementById('current-time');
-  const totalDurationElement = document.getElementById('total-duration');
+    const playPauseButton = document.getElementById('play-pause');
+    const prevButton = document.getElementById('prev');
+    const nextButton = document.getElementById('next');
+    const seekSlider = document.getElementById('seek-slider');
+    const songName = document.getElementById('song-name');
+    const currentTimeElement = document.getElementById('current-time');
+    const totalDurationElement = document.getElementById('total-duration');
 
-  const songs = [
-    { name: 'Kay Nakayama - Body and Mind', url: 'songs/BodyAndMind.mp3'},
-    { name: 'Psalm Trees - fever', url: 'songs/Fever.mp3' },
-    { name: 'Mondo Loops - Lunar Drive', url: 'songs/LD.mp3' },
-    { name: 'hoogway - Missing Earth', url: 'songs/ME.mp3' },
-    { name: 'WYS - Nautilus', url: 'songs/Nautilus.mp3' },
-    { name: 'Sleepy Fish - Procrastinating', url: 'songs/Procrastinating.mp3' },
-    { name: 'nothingtosay - Inspect', url: 'songs/Inspect.mp3' },
-    { name: 'Lenny Ibizzare - The Local Floatery', url: 'songs/TLF.mp3' }
-    // Add more songs here
-  ];
+    let songs = [];
+    let currentSongIndex = 0;
+    let isPlaying = false;
+    let player = new Audio()
+    player.muted = true;
+    num_init = 0
 
-  let currentSongIndex = 0;
-  let player = new Audio();
-
-  function loadSong(index) {
-    player.src = songs[index].url;
-    songName.textContent = songs[index].name;
-    player.load();
-    player.currentTime = 0; // Ensure currentTime is set to 0 after loading
-    player.onloadedmetadata = () => {
-      totalDurationElement.textContent = formatTime(player.duration);
-    };
-    // Reset slider and current time to the beginning
-    seekSlider.value = 0;
-    currentTimeElement.textContent = formatTime(0);
-    playPauseButton.innerHTML = '<i class="fas fa-play"></i>'; // Set to play icon by default
-  }
-
-  function playPause() {
-    if (player.paused) {
-      player.play();
-      playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
-    } else {
-      player.pause();
-      playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
+    function updateSongDetails() {
+        songName.textContent = songs[currentSongIndex].name;
+        player.src = chrome.runtime.getURL(songs[currentSongIndex].url);
     }
-  }
 
-  function prevSong() {
-    currentSongIndex = (currentSongIndex > 0) ? currentSongIndex - 1 : songs.length - 1;
-    loadSong(currentSongIndex);
-    player.play();
-    playPauseButton.innerHTML = '<i class="fas fa-pause"></i>'; // Change icon to pause
-  }
+    function sendCommandToBackground(command, data = {}) {
+        return new Promise((resolve, reject) => {
+            chrome.runtime.sendMessage({ command, ...data }, (response) => {
+                if (chrome.runtime.lastError || response.status === 'error') {
+                    reject(chrome.runtime.lastError || new Error(response.message));
+                } else {
+                    resolve(response);
+                }
+            });
+        });
+    }
 
-  function nextSong() {
-    currentSongIndex = (currentSongIndex < songs.length - 1) ? currentSongIndex + 1 : 0;
-    loadSong(currentSongIndex);
-    player.play();
-    playPauseButton.innerHTML = '<i class="fas fa-pause"></i>'; // Change icon to pause
-  }
+    async function init() {
+       
+        try {   
+            //await sendCommandToBackground('createPlaybackWindow');
+            chrome.runtime.sendMessage({ command: 'getSongs' }, (response) => {
+                if (response) {
+                    // Process the response here
+                    songs = response.songs;
+                    currentSongIndex = response.currentSongIndex;
+                    updateSongDetails()
+                    playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
+                    isPlaying = false;
+                    num_init++;
 
-  function updateSeekSlider() {
-    const value = (player.currentTime / player.duration) * 100;
-    seekSlider.value = value;
-    currentTimeElement.textContent = formatTime(player.currentTime);
-  }
+                } else {
+                    // Handle error or retry logic
+                    console.error('Failed to get songs.');
+                } 
+            });
+            
+            
+        } catch (error) {
+            console.error('Error during initialization:', error);
+        }
+        
+    }
+    
 
-  function seekSong() {
-    const seekTo = player.duration * (seekSlider.value / 100);
-    player.currentTime = seekTo;
-  }
+    playPauseButton.addEventListener('click', async () => {
+        try {
+            if (isPlaying) {
+                await sendCommandToBackground('pause');
+                playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
+                player.pause();
+                
+            } else {
+                await sendCommandToBackground('play');
+                playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
+                player.play();
+                
+            }
+            isPlaying = !isPlaying;
+        } catch (error) {
+            console.error('Error during play/pause:', error);
+        }
+    });
 
-  function formatTime(seconds) {
-    const minutes = Math.floor(seconds / 60);
-    const secondsPart = Math.floor(seconds % 60);
-    return `${minutes}:${secondsPart < 10 ? '0' : ''}${secondsPart}`;
-  }
+    prevButton.addEventListener('click', async () => {
+        try {
+            await sendCommandToBackground('prev');
+            currentSongIndex = (currentSongIndex > 0) ? currentSongIndex - 1 : songs.length - 1;
+            updateSongDetails();
+            playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
+            isPlaying = true;
+            player.play()
+        } catch (error) {
+            console.error('Error during prev:', error);
+        }
+    });
 
-  function playNextSong() {
-    nextSong();
-  }
+    nextButton.addEventListener('click', async () => {
+        try {
+            await sendCommandToBackground('next');
+            currentSongIndex = (currentSongIndex < songs.length - 1) ? currentSongIndex + 1 : 0;
+            updateSongDetails();
+            playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
+            isPlaying = true;
+            player.play()
+        } catch (error) {
+            console.error('Error during next:', error);
+        }
+    });
 
-  playPauseButton.addEventListener('click', playPause);
-  prevButton.addEventListener('click', prevSong);
-  nextButton.addEventListener('click', nextSong);
-  seekSlider.addEventListener('input', seekSong);
-  player.addEventListener('timeupdate', updateSeekSlider);
+    seekSlider.addEventListener('input', async () => {
+        const seekTo = player.duration * (seekSlider.value / 100);
+        player.currentTime = seekTo;
+        try {
+            await sendCommandToBackground('seek', { seekTo });
+        } catch (error) {
+            console.error('Error during seek:', error);
+        }
+    });
 
-  // Automatically play next song when current song ends
-  player.addEventListener('ended', playNextSong);
+    player.addEventListener('timeupdate', () => {
+        const value = (player.currentTime / player.duration) * 100;
+        seekSlider.value = value;
+        currentTimeElement.textContent = formatTime(player.currentTime);
+    });
 
-  // Initialize the first song
-  loadSong(currentSongIndex);
+    player.addEventListener('loadedmetadata', () => {
+        totalDurationElement.textContent = formatTime(player.duration);
+    });
+
+    player.addEventListener('ended', playNextSong);
+
+    async function playNextSong() {
+        await sendCommandToBackground('next');
+            currentSongIndex = (currentSongIndex < songs.length - 1) ? currentSongIndex + 1 : 0;
+            updateSongDetails();
+            playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
+            isPlaying = true;
+            player.play()
+    }
+
+    function updateUI(state) {
+        // Update UI elements like play/pause button and seek slider
+        console.log("updating state");
+        if (state.isPlaying) {
+            playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
+        } else {
+            playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
+        }
+        seekSlider.value = (state.currentTime / state.totalDuration) * 100;
+        // Update other UI elements as needed
+    }
+
+    function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const secondsPart = Math.floor(seconds % 60);
+        return `${minutes}:${secondsPart < 10 ? '0' : ''}${secondsPart}`;
+    }
+
+    init();
 });
