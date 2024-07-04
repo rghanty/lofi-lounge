@@ -3,8 +3,10 @@ let isPlaying = false;
 let currentTime = 0;
 let totalDuration = 0;
 let audio = new Audio();
+let isPaused = false;
+let prevsrc = null;
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message) => {
     if (message.play) {
         playAudio(message.play.url);
         
@@ -12,35 +14,40 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         pauseAudio();
     } else if (message.command === 'seek') {
         seekAudio(message.seekTo);
-    } else if (message.command === 'updateUI') {
-      console.log(updatePlaybackState());
-        
     
     }
-    
 });
 
 
 
 function playAudio(url) {
+    if (!isPaused || prevsrc !== url) {
     audio.src = url;
+    prevsrc = url;  
+    }
     audio.play();
     isPlaying = true;
+    isPaused = false;
 }
 
 function pauseAudio() {
     audio.pause();
     isPlaying = false;
+    isPaused = true;
 }
 
 function seekAudio(seekTo) {
     audio.currentTime = seekTo;
 }
 
-function updatePlaybackState() {
-    return {
-        isPlaying: isPlaying,
+audio.addEventListener('timeupdate', () => {
+    chrome.runtime.sendMessage({
         currentTime: audio.currentTime,
-        totalDuration: audio.totalDuration
-    };
-}
+        duration: audio.duration,
+        isPlaying: isPlaying
+    });
+});
+
+audio.addEventListener('ended', () => {
+    chrome.runtime.sendMessage({ command: 'next' });
+});

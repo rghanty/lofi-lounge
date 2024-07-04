@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let isPlaying = false;
     let player = new Audio()
     player.muted = true;
-    num_init = 0
+    num_init = 0;
 
     function updateSongDetails() {
         songName.textContent = songs[currentSongIndex].name;
@@ -35,19 +35,27 @@ document.addEventListener('DOMContentLoaded', function() {
        
         try {   
             //await sendCommandToBackground('createPlaybackWindow');
-            chrome.runtime.sendMessage({ command: 'getSongs' }, (response) => {
+            chrome.runtime.sendMessage({ command: 'getState' }, (response) => {
                 if (response) {
                     // Process the response here
                     songs = response.songs;
                     currentSongIndex = response.currentSongIndex;
+                    //isPlaying = response.isPlaying ?? false;
                     updateSongDetails()
-                    playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
-                    isPlaying = false;
+                    //playPauseButton.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+                    
                     num_init++;
+
+                    if (response.currentTime !== undefined && response.duration !== undefined) {
+                        const value = (response.currentTime / response.duration) * 100;
+                        seekSlider.value = value;
+                        currentTimeElement.textContent = formatTime(response.currentTime);
+                        totalDurationElement.textContent = formatTime(response.duration);
+                    }
 
                 } else {
                     // Handle error or retry logic
-                    console.error('Failed to get songs.');
+                    console.error('Failed to get state.');
                 } 
             });
             
@@ -114,15 +122,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    player.addEventListener('timeupdate', () => {
-        const value = (player.currentTime / player.duration) * 100;
-        seekSlider.value = value;
-        currentTimeElement.textContent = formatTime(player.currentTime);
-    });
-
-    player.addEventListener('loadedmetadata', () => {
-        totalDurationElement.textContent = formatTime(player.duration);
-    });
 
     player.addEventListener('ended', playNextSong);
 
@@ -135,17 +134,23 @@ document.addEventListener('DOMContentLoaded', function() {
             player.play()
     }
 
-    function updateUI(state) {
-        // Update UI elements like play/pause button and seek slider
-        console.log("updating state");
-        if (state.isPlaying) {
-            playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
-        } else {
-            playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
-        }
-        seekSlider.value = (state.currentTime / state.totalDuration) * 100;
-        // Update other UI elements as needed
+
+    function updateSlider() {
+        chrome.storage.local.get(['currentTime', 'duration', 'isPlaying'], (data) => {
+            if (data.currentTime !== undefined && data.duration !== undefined && data.isPlaying !== undefined) {
+                console.log(data.currentTime, data.duration);
+                const value = (data.currentTime / data.duration) * 100;
+                seekSlider.value = value;
+                currentTimeElement.textContent = formatTime(data.currentTime);
+                totalDurationElement.textContent = formatTime(data.duration);
+                isPlaying = data.isPlaying;
+                playPauseButton.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+            }
+        });
     }
+
+    setInterval(updateSlider, 200);
+
 
     function formatTime(seconds) {
         const minutes = Math.floor(seconds / 60);
